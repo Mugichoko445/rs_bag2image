@@ -49,6 +49,7 @@ private:
     std::vector<int32_t> params;
     bool scaling = false;
     bool display = false;
+    bool align = true;
 
 public:
     // Constructor

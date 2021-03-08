@@ -82,7 +82,8 @@ inline void RealSense::initializeParameter( int argc, char * argv[] )
         "{ bag b     |       | path to input bag file. (required)                                       }"
         "{ scaling s | false | enable depth scaling for visualization. false is raw 16bit image. (bool) }"
         "{ quality q | 95    | jpeg encoding quality for color and infrared. [0-100]                    }"
-        "{ display d | false | display each stream images on window. false is not display. (bool)       }";
+        "{ display d | false | display each stream images on window. false is not display. (bool)       }"
+        "{ align a   | true  | align depth to color. (bool)                                             }";
     cv::CommandLineParser parser( argc, argv, keys );
 
     if( parser.has( "help" ) ){
@@ -129,6 +130,14 @@ inline void RealSense::initializeParameter( int argc, char * argv[] )
     }
     else{
         display = parser.get<bool>( "display" );
+    }
+
+    // Retrieve Align Flag (Option)
+    if ( !parser.has( "align" ) ) {
+        align = true;
+    }
+    else {
+        align = parser.get<bool>( "align" );
     }
 }
 
@@ -209,6 +218,10 @@ inline void RealSense::updateFrame()
 {
     // Update Frame
     frameset = pipeline.wait_for_frames();
+
+    // Align depth to color
+    rs2::align align_to_color(RS2_STREAM_COLOR);
+    frameset = align_to_color.process(frameset);
 }
 
 // Update Color
@@ -496,7 +509,9 @@ inline void RealSense::saveColor()
     // Create Save Directory and File Name
     std::ostringstream oss;
     oss << directory.generic_string() << "/Color/";
-    oss << std::setfill( '0' ) << std::setw( 6 ) << color_frame.get_frame_number() << ".jpg";
+    //oss << std::setfill( '0' ) << std::setw( 5 ) << color_frame.get_frame_number() << ".jpg";
+    static int frameIdx = 0;
+    oss << "image" << std::setfill( '0' ) << std::setw( 5 ) << frameIdx++ << ".jpg";
 
     // Write Color Image
     cv::imwrite( oss.str(), color_mat, params );
@@ -515,8 +530,10 @@ inline void RealSense::saveDepth()
 
     // Create Save Directory and File Name
     std::ostringstream oss;
-    oss << directory.generic_string() << "/Depth/";
-    oss << std::setfill( '0' ) << std::setw( 6 ) << depth_frame.get_frame_number() << ".png";
+    oss << directory.generic_string() << "/depth/";
+    //oss << std::setfill( '0' ) << std::setw( 5 ) << depth_frame.get_frame_number() << ".png";
+    static int frameIdx = 0;
+    oss << "depth" << std::setfill( '0' ) << std::setw( 5 ) << frameIdx++ << ".png";
 
     // Scaling
     cv::Mat scale_mat = depth_mat;
